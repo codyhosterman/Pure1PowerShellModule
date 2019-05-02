@@ -166,7 +166,7 @@ function Get-PureOneArrays {
         {
             throw "Please only enter in one search parameter: ID, name, or product"
         }
-        if (($null -eq $Global:pureOneRestHeader) -and ($pureOneToken -ne ""))
+        if (($null -eq $Global:pureOneRestHeader) -and ($pureOneToken -eq ""))
         {
             throw "No access token found in the global variable or passed in. Run the cmdlet New-PureOneRestConnection to authenticate."
         }
@@ -232,7 +232,7 @@ function New-PureOneRestOperation {
         [string]$pureOneToken
     )
     Begin{
-        if (($null -eq $Global:pureOneRestHeader) -and ($pureOneToken -ne ""))
+        if (($null -eq $Global:pureOneRestHeader) -and ($pureOneToken -eq ""))
         {
             throw "No access token found in the global variable or passed in. Run the cmdlet New-PureOneRestConnection to authenticate."
         }
@@ -306,7 +306,7 @@ function Get-PureOneArrayTags {
         {
             throw "Please only enter an array name or an ID."
         }
-        if (($null -eq $Global:pureOneRestHeader) -and ($pureOneToken -ne ""))
+        if (($null -eq $Global:pureOneRestHeader) -and ($pureOneToken -eq ""))
         {
             throw "No access token found in the global variable or passed in. Run the cmdlet New-PureOneRestConnection to authenticate."
         }
@@ -422,7 +422,7 @@ function Set-PureOneArrayTags {
         {
             throw "Please enter an array name or an array ID."
         }
-        if (($null -eq $Global:pureOneRestHeader) -and ($pureOneToken -ne ""))
+        if (($null -eq $Global:pureOneRestHeader) -and ($pureOneToken -eq ""))
         {
             throw "No access token found in the global variable or passed in. Run the cmdlet New-PureOneRestConnection to authenticate."
         }
@@ -527,7 +527,7 @@ function Remove-PureOneArrayTags {
         {
             throw "Please enter one or more array names or an array IDs."
         }
-        if (($null -eq $Global:pureOneRestHeader) -and ($pureOneToken -ne ""))
+        if (($null -eq $Global:pureOneRestHeader) -and ($pureOneToken -eq ""))
         {
             throw "No access token found in the global variable or passed in. Run the cmdlet New-PureOneRestConnection to authenticate."
         }
@@ -647,7 +647,7 @@ function Get-PureOneArrayNetworking {
         {
             throw "Please only enter an array name or an ID."
         }
-        if (($null -eq $Global:pureOneRestHeader) -and ($pureOneToken -ne ""))
+        if (($null -eq $Global:pureOneRestHeader) -and ($pureOneToken -eq ""))
         {
             throw "No access token found in the global variable or passed in. Run the cmdlet New-PureOneRestConnection to authenticate."
         }
@@ -725,7 +725,7 @@ function Get-PureOneMetricDetails {
             [string]$pureOneToken
     )
     Begin{
-        if (($null -eq $Global:pureOneRestHeader) -and ($pureOneToken -ne ""))
+        if (($null -eq $Global:pureOneRestHeader) -and ($pureOneToken -eq ""))
         {
             throw "No access token found in the global variable or passed in. Run the cmdlet New-PureOneRestConnection to authenticate."
         }
@@ -828,7 +828,7 @@ function Get-PureOneMetrics {
         {
             throw "Please only enter an object name or an ID."
         }
-        if (($null -eq $Global:pureOneRestHeader) -and ($pureOneToken -ne ""))
+        if (($null -eq $Global:pureOneRestHeader) -and ($pureOneToken -eq ""))
         {
             throw "No access token found in the global variable or passed in. Run the cmdlet New-PureOneRestConnection to authenticate."
         }
@@ -949,7 +949,7 @@ function Get-PureOneVolumes {
         {
             throw "Please enter an array name or an array ID."
         }
-        if (($null -eq $Global:pureOneRestHeader) -and ($pureOneToken -ne ""))
+        if (($null -eq $Global:pureOneRestHeader) -and ($pureOneToken -eq ""))
         {
             throw "No access token found in the global variable or passed in. Run the cmdlet New-PureOneRestConnection to authenticate."
         }
@@ -991,14 +991,14 @@ function Get-PureOneVolumes {
         {
             if ($arrayName -ne "")
             {
-                $restQuery = $restQuery + ([System.Web.HttpUtility]::Urlencode("filter=arrays[any].name")) + "=`'$($arrayName)`'"
+                $restQuery = $restQuery + "filter=" + ([System.Web.HttpUtility]::Urlencode("arrays[any].name")) + "=`'$($arrayName)`'"
             }
             if ($arrayId -ne "")
             {
-                $restQuery = $restQuery + ([System.Web.HttpUtility]::Urlencode("filter=arrays[any].id")) + "=`'$($arrayId)`'"
+                $restQuery = $restQuery + "filter=" + ([System.Web.HttpUtility]::Urlencode("arrays[any].id")) + "=`'$($arrayId)`'"
             }
         }
-        $apiendpoint = "https://api.pure1.purestorage.com/api/1.0/volumes" + $restQuery
+        $apiendpoint = "https://api.pure1.purestorage.com/api/1.latest/volumes" + $restQuery
         $pureVolumes = Invoke-RestMethod -Method Get -Uri $apiendpoint -ContentType "application/json" -Headers $pureOneHeader     
     }
     End{
@@ -1049,7 +1049,7 @@ function Get-PureOnePods {
         {
             throw "Please enter an array name or an array ID."
         }
-        if (($null -eq $Global:pureOneRestHeader) -and ($pureOneToken -ne ""))
+        if (($null -eq $Global:pureOneRestHeader) -and ($pureOneToken -eq ""))
         {
             throw "No access token found in the global variable or passed in. Run the cmdlet New-PureOneRestConnection to authenticate."
         }
@@ -1076,11 +1076,11 @@ function Get-PureOnePods {
         }
         if ($arrayName -ne "")
         {
-            $restQuery = $restQuery + ([System.Web.HttpUtility]::Urlencode("filter=arrays[any].name")) + "=`'$($arrayName)`'"
+            $restQuery = $restQuery + "filter=" + ([System.Web.HttpUtility]::Urlencode("arrays[any].name")) + "=`'$($arrayName)`'"
         }
         if ($arrayId -ne "")
         {
-            $restQuery = $restQuery + ([System.Web.HttpUtility]::Urlencode("filter=arrays[any].id")) + "=`'$($arrayId)`'"
+            $restQuery = $restQuery + "filter=" + ([System.Web.HttpUtility]::Urlencode("arrays[any].id")) + "=`'$($arrayId)`'"
         }
         $apiendpoint = "https://api.pure1.purestorage.com/api/1.0/pods" + $restQuery
         $purePods = Invoke-RestMethod -Method Get -Uri $apiendpoint -ContentType "application/json" -Headers $pureOneHeader     
@@ -1143,7 +1143,7 @@ function Get-PureOneVolumeSnapshots {
         {
             throw "Please only enter an array name or an array ID."
         }
-        if (($null -eq $Global:pureOneRestHeader) -and ($pureOneToken -ne ""))
+        if (($null -eq $Global:pureOneRestHeader) -and ($pureOneToken -eq ""))
         {
             throw "No access token found in the global variable or passed in. Run the cmdlet New-PureOneRestConnection to authenticate."
         }
@@ -1185,11 +1185,11 @@ function Get-PureOneVolumeSnapshots {
         {
             if ($arrayName -ne "")
             {
-                $restQuery = $restQuery + ([System.Web.HttpUtility]::Urlencode("filter=arrays[any].name")) + "=`'$($arrayName)`'"
+                $restQuery = $restQuery + "filter=" + ([System.Web.HttpUtility]::Urlencode("arrays[any].name")) + "=`'$($arrayName)`'"
             }
             if ($arrayId -ne "")
             {
-                $restQuery = $restQuery + ([System.Web.HttpUtility]::Urlencode("filter=arrays[any].id")) + "=`'$($arrayId)`'"
+                $restQuery = $restQuery + "filter=" + ([System.Web.HttpUtility]::Urlencode("arrays[any].id")) + "=`'$($arrayId)`'"
             }
         }
         $apiendpoint = "https://api.pure1.purestorage.com/api/1.0/volume-snapshots" + $restQuery
@@ -1248,7 +1248,7 @@ function Get-PureOneFileSystems {
         {
             throw "Please enter an array name or an array ID."
         }
-        if (($null -eq $Global:pureOneRestHeader) -and ($pureOneToken -ne ""))
+        if (($null -eq $Global:pureOneRestHeader) -and ($pureOneToken -eq ""))
         {
             throw "No access token found in the global variable or passed in. Run the cmdlet New-PureOneRestConnection to authenticate."
         }
@@ -1275,11 +1275,11 @@ function Get-PureOneFileSystems {
         }
         if ($arrayName -ne "")
         {
-            $restQuery = $restQuery + ([System.Web.HttpUtility]::Urlencode("filter=arrays[any].name")) + "=`'$($arrayName)`'"
+            $restQuery = $restQuery + "filter=" + ([System.Web.HttpUtility]::Urlencode("arrays[any].name")) + "=`'$($arrayName)`'"
         }
         if ($arrayId -ne "")
         {
-            $restQuery = $restQuery + ([System.Web.HttpUtility]::Urlencode("filter=arrays[any].id")) + "=`'$($arrayId)`'"
+            $restQuery = $restQuery + "filter=" + ([System.Web.HttpUtility]::Urlencode("arrays[any].id")) + "=`'$($arrayId)`'"
         }
         $apiendpoint = "https://api.pure1.purestorage.com/api/1.0/file-systems" + $restQuery
         $pureFileSystems = Invoke-RestMethod -Method Get -Uri $apiendpoint -ContentType "application/json" -Headers $pureOneHeader     
@@ -1335,7 +1335,7 @@ function Get-PureOneFileSystemSnapshots {
         {
             throw "Please only enter an array name or an array ID."
         }
-        if (($null -eq $Global:pureOneRestHeader) -and ($pureOneToken -ne ""))
+        if (($null -eq $Global:pureOneRestHeader) -and ($pureOneToken -eq ""))
         {
             throw "No access token found in the global variable or passed in. Run the cmdlet New-PureOneRestConnection to authenticate."
         }
@@ -1362,11 +1362,11 @@ function Get-PureOneFileSystemSnapshots {
         }
         if ($arrayName -ne "")
         {
-            $restQuery = $restQuery + ([System.Web.HttpUtility]::Urlencode("filter=arrays[any].name")) + "=`'$($arrayName)`'"
+            $restQuery = $restQuery + "filter=" + ([System.Web.HttpUtility]::Urlencode("arrays[any].name")) + "=`'$($arrayName)`'"
         }
         if ($arrayId -ne "")
         {
-            $restQuery = $restQuery + ([System.Web.HttpUtility]::Urlencode("filter=arrays[any].id")) + "=`'$($arrayId)`'"
+            $restQuery = $restQuery + "filter=" + ([System.Web.HttpUtility]::Urlencode("arrays[any].id")) + "=`'$($arrayId)`'"
         }
         $apiendpoint = "https://api.pure1.purestorage.com/api/1.0/file-system-snapshots" + $restQuery
         $pureSnapshots = Invoke-RestMethod -Method Get -Uri $apiendpoint -ContentType "application/json" -Headers $pureOneHeader   
@@ -1449,7 +1449,7 @@ function Get-PureOneArrayBusyMeter {
         {
             throw "Please only enter an object name or an ID."
         }
-        if (($null -eq $Global:pureOneRestHeader) -and ($pureOneToken -ne ""))
+        if (($null -eq $Global:pureOneRestHeader) -and ($pureOneToken -eq ""))
         {
             throw "No access token found in the global variable or passed in. Run the cmdlet New-PureOneRestConnection to authenticate."
         }
