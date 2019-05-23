@@ -1,3 +1,4 @@
+Write-Warning -Message "All pluralized cmdlets in the Pure1 module will be deprecated in a future release. Please update any scripts. Example: change get-pureonearrays to get-pureonearray"
 function New-PureOneRestConnection {
     <#
     .SYNOPSIS
@@ -96,7 +97,7 @@ function New-PureOneRestConnection {
         $Global:pureOneRestHeader = @{authorization="Bearer $($pureOnetoken.access_token)"} 
     }
 }
-function Get-PureOneArrays {
+function Get-PureOneArray {
     <#
     .SYNOPSIS
       Returns all Pure Storage arrays listed in your Pure1 account.
@@ -262,7 +263,7 @@ function New-PureOneRestOperation {
         return $pureOneReponse.items
     }
 }
-function Get-PureOneArrayTags {
+function Get-PureOneArrayTag {
     <#
     .SYNOPSIS
       Gets a tag for a given array or arrays in Pure1
@@ -370,7 +371,7 @@ function Get-PureOneArrayTags {
         return $pureArrayTags.items
     }
 }
-function Set-PureOneArrayTags {
+function Set-PureOneArrayTag {
     <#
     .SYNOPSIS
       Sets/updates a tag for a given array or arrays in Pure1
@@ -479,7 +480,7 @@ function Set-PureOneArrayTags {
         return $pureArrayTags.items
     }
 }
-function Remove-PureOneArrayTags {
+function Remove-PureOneArrayTag {
     <#
     .SYNOPSIS
       Removes one or more tags for a given array or arrays in Pure1
@@ -688,7 +689,7 @@ function Get-PureOneArrayNetworking {
         return $pureArrayNetwork.items
     }
 }
-function Get-PureOneMetricDetails {
+function Get-PureOneMetricDetail {
     <#
     .SYNOPSIS
       Returns the available metrics in Pure1 
@@ -757,7 +758,7 @@ function Get-PureOneMetricDetails {
         return $pureOneMetrics.items
     }
 }
-function Get-PureOneMetrics {
+function Get-PureOneMetric {
     <#
     .SYNOPSIS
       Returns the metrics for a given array in Pure1
@@ -845,7 +846,7 @@ function Get-PureOneMetrics {
     }
     Process{
         #get metric rules
-        $metricDetails = Get-PureOneMetricDetails -metricName $metricName
+        $metricDetails = Get-PureOneMetricDetail -metricName $metricName
         #set granularity if not set
         if ($granularity -eq 0)
         {
@@ -898,7 +899,7 @@ function Get-PureOneMetrics {
         return $pureOneMetrics.items
     }
 }
-function Get-PureOneVolumes {
+function Get-PureOneVolume {
     <#
     .SYNOPSIS
       Returns all Pure Storage volumes listed in your Pure1 account.
@@ -1005,7 +1006,7 @@ function Get-PureOneVolumes {
         return $pureVolumes.items
     }
 }
-function Get-PureOnePods {
+function Get-PureOnePod {
     <#
     .SYNOPSIS
       Returns all Pure Storage pods listed in your Pure1 account.
@@ -1089,7 +1090,7 @@ function Get-PureOnePods {
         return $purePods.items
     }
 }
-function Get-PureOneVolumeSnapshots {
+function Get-PureOneVolumeSnapshot {
     <#
     .SYNOPSIS
       Returns all Pure Storage volume snapshots listed in your Pure1 account.
@@ -1204,7 +1205,7 @@ function Get-PureOneVolumeSnapshots {
         return $pureVolumes
     }
 }
-function Get-PureOneFileSystems {
+function Get-PureOneFileSystem {
     <#
     .SYNOPSIS
       Returns all Pure Storage file systems listed in your Pure1 account.
@@ -1288,7 +1289,7 @@ function Get-PureOneFileSystems {
         return $pureFileSystems.items
     }
 }
-function Get-PureOneFileSystemSnapshots {
+function Get-PureOneFileSystemSnapshot {
     <#
     .SYNOPSIS
       Returns all Pure Storage file system snapshots listed in your Pure1 account.
@@ -1466,7 +1467,7 @@ function Get-PureOneArrayBusyMeter {
     }
     Process{
         #get metric rules
-        $metricDetails = Get-PureOneMetricDetails -metricName $metricName
+        $metricDetails = Get-PureOneMetricDetail -metricName $metricName
         #set granularity if not set
         if ($granularity -eq 0)
         {
@@ -1520,3 +1521,15 @@ function Get-PureOneArrayBusyMeter {
         return $pureOneMetrics.items
     }
 }
+
+New-Alias -Name Get-PureOneArrays -Value Get-PureOneArray
+New-Alias -Name Get-PureOneArrayTags -Value Get-PureOneArrayTag
+New-Alias -Name Set-PureOneArrayTags -Value Set-PureOneArrayTag
+New-Alias -Name Remove-PureOneArrayTags -Value Remove-PureOneArrayTag
+New-Alias -Name Get-PureOneMetricDetails -Value Get-PureOneMetricDetail
+New-Alias -Name Get-PureOneMetrics -Value Get-PureOneMetric
+New-Alias -Name Get-PureOnePods -Value Get-PureOnePod
+New-Alias -Name Get-PureOneVolumes -Value Get-PureOneVolume
+New-Alias -Name Get-PureOneVolumeSnapshots -Value Get-PureOneVolumeSnapshot
+New-Alias -Name Get-PureOneFileSystems -Value Get-PureOneFileSystem
+New-Alias -Name Get-PureOneFileSystemSnapshots -Value Get-PureOneFileSystemSnapshot
