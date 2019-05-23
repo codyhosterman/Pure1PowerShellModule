@@ -41,3 +41,10 @@ Get-PureOneFileSystemSnapshot
 Get-PureOneArrayBusyMeter
 
 NOTE: Previous versions of this module used plurals in the cmdlets. This is not a best practice and will be deprecated. Old names are still supported but will be entirely deprecated in a future release. Please updates any use of these cmdlets to use the proper names. So if you used get-pureOneArrays, please change it to get-pureOneArray.
+
+When importing the module you will see the following warning until the cmdlet name changes have been fully deprecated:
+
+"WARNING: All pluralized cmdlets in the Pure1 module will be deprecated in a future release. Please update any scripts.
+Example: change get-pureonearrays to get-pureonearray"
+
+This can be suppressed by adding -WarningAction SilentlyContinue
