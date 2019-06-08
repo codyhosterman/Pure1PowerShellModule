@@ -1386,15 +1386,15 @@ function Get-PureOneArrayBusyMeter {
     .SYNOPSIS
       Returns the busy meter for a given array in Pure1
     .DESCRIPTION
-      Returns the busy meter for a given array in Pure1, either an average or a maximum of a given time period. Default behavior is to return the average.
+      Returns the busy meter for a given array (or arrays) in Pure1, either an average or a maximum of a given time period. Default behavior is to return the average.
     .INPUTS
-      Required: resource name or ID--must be an array. Optional: timeframe, granularity, and aggregation type (if none entered defaults will be used based on metric entered). Also optionally an access token.
+      Required: resource names or IDs--must be an array. Optional: timeframe, granularity, and aggregation type (if none entered defaults will be used based on metric entered). Also optionally an access token.
     .OUTPUTS
       Returns the Pure Storage busy meter metric information in Pure1.
     .NOTES
-      Version:        1.0
+      Version:        1.1
       Author:         Cody Hosterman https://codyhosterman.com
-      Creation Date:  01/18/2019
+      Creation Date:  06/07/2019
       Purpose/Change: Initial script development
   
     *******Disclaimer:******************************************************
@@ -1408,10 +1408,10 @@ function Get-PureOneArrayBusyMeter {
     [CmdletBinding()]
     Param(
             [Parameter(Position=0)]
-            [string]$objectName,
+            [string[]]$objectName,
          
             [Parameter(Position=1)]
-            [string]$objectId,
+            [string[]]$objectId,
 
             [Parameter(Position=2)]
             [switch]$average,
@@ -1433,6 +1433,14 @@ function Get-PureOneArrayBusyMeter {
     )
     Begin{
         $metricName = "array_total_load"
+        if ($null -eq $objectName)
+        {
+            $objectName = ""
+        }
+        if ($null -eq $objectId)
+        {
+            $objectId = ""
+        }
         if (($average -eq $true) -and ($maximum -eq $true))
         {
             throw "Please only choose average or maximum, not both."
@@ -1508,10 +1516,38 @@ function Get-PureOneArrayBusyMeter {
         }
         if ($objectName -ne "")
         {
-            $restQuery = $restQuery + "resource_names=`'$($objectName)`'"
+            if ($objectName.count -gt 1)
+            {
+                foreach ($arrayName in $objectName)
+                {
+                    $pureArrays = $pureArrays + "`'$($arrayName)`'"
+                    if ($arrayName -ne ($objectName |Select-Object -Last 1))
+                    {
+                        $pureArrays = $pureArrays + ","
+                    }
+                }
+                $restQuery = $restQuery + "resource_names=" + $pureArrays
+            }
+            else {
+                $restQuery = $restQuery + "resource_names=`'$($objectName)`'"
+            }
         }
         else {
-            $restQuery = $restQuery + "ids=`'$($objectId)`'"
+            if ($objectId.count -gt 1)
+            {
+                foreach ($arrayName in $objectId)
+                {
+                    $pureArrays = $pureArrays + "`'$($arrayName)`'"
+                    if ($arrayName -ne ($objectId |Select-Object -Last 1))
+                    {
+                        $pureArrays = $pureArrays + ","
+                    }
+                }
+                $restQuery = $restQuery + "resource_ids=" + $pureArrays
+            }
+            else {
+                $restQuery = $restQuery + "resource_ids=`'$($objectId)`'"
+            }
         }
         
         $apiendpoint = "https://api.pure1.purestorage.com/api/1.0/metrics/history" + $restQuery
