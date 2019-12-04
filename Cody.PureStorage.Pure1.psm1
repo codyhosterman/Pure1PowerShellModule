@@ -1,4 +1,194 @@
-Write-Warning -Message "All pluralized cmdlets in the Pure1 module will be deprecated in a future release. Please update any scripts. Example: change get-pureonearrays to get-pureonearray"
+function New-PureOneCertificate {
+    <#
+    .SYNOPSIS
+      Creates a new certificate for use in authentication with Pure1.
+    .DESCRIPTION
+      Creates a properly formatted RSA 256 certificate
+    .INPUTS
+      Certificate store (optional)
+    .OUTPUTS
+      Returns the certificate
+    .EXAMPLE
+      PS C:\ New-PureOneCertificate
+
+      Creates a properly formatted self-signed certificate for Pure1 authentication. Defaults to certificate store of cert:\currentuser\my
+    .EXAMPLE
+      PS C:\ New-PureOneCertificate -certificateStore cert:\localmachine\my
+
+      Creates a properly formatted self-signed certificate for Pure1 authentication. Uses the specifed certificate store. Non-default stores usually require running as administrator.
+    .NOTES
+      Version:        1.0
+      Author:         Cody Hosterman https://codyhosterman.com
+      Creation Date:  12/02/2019
+      Purpose/Change: Initial script development
+  
+    *******Disclaimer:******************************************************
+    This scripts are offered "as is" with no warranty.  While this 
+    scripts is tested and working in my environment, it is recommended that you test 
+    this script in a test lab before using in a production environment. Everyone can 
+    use the scripts/commands provided here without any written permission but I
+    will not be liable for any damage or loss to the system.
+    ************************************************************************
+    #>
+
+    [CmdletBinding()]
+    Param(
+            [Parameter(Position=0)]
+            [String]$certificateStore = "cert:\currentuser\my"
+    )
+    $policies = [System.Security.Cryptography.CngExportPolicies]::AllowPlaintextExport,[System.Security.Cryptography.CngExportPolicies]::AllowExport
+    $CertObj = New-SelfSignedCertificate -certstorelocation $certificateStore -HashAlgorithm "SHA256" -KeyLength 2048 -KeyAlgorithm RSA -KeyUsage DigitalSignature  -KeyExportPolicy $policies -Subject "PureOneCert" -ErrorAction Stop
+    return $CertObj
+}
+function Get-PureOnePublicKey {
+    <#
+    .SYNOPSIS
+      Retrives and formats a PEM based Public Key from a Windows-based certificate
+    .DESCRIPTION
+      Pulls out the public key and formats it in INT 64 PEM encoding for use in Pure1
+    .INPUTS
+      Certificate
+    .OUTPUTS
+      Returns the PEM based public key
+    .EXAMPLE
+      PS C:\ $cert = New-PureOneCertificate
+      PS C:\ $cert | Get-PureOnePublicKey
+
+      Returns the PEM formatted Public Key of the certificate passed in via piping so that it can be entered in Pure1.
+    .EXAMPLE
+      PS C:\ $cert = New-PureOneCertificate
+      PS C:\ Get-PureOnePublicKey -certificate $cert
+
+      Returns the PEM formatted Public Key of the certificate passed in so that it can be entered in Pure1.
+    .NOTES
+      Version:        1.0
+      Author:         Cody Hosterman https://codyhosterman.com
+      Creation Date:  12/02/2019
+      Purpose/Change: Initial script development
+  
+    *******Disclaimer:******************************************************
+    This scripts are offered "as is" with no warranty.  While this 
+    scripts is tested and working in my environment, it is recommended that you test 
+    this script in a test lab before using in a production environment. Everyone can 
+    use the scripts/commands provided here without any written permission but I
+    will not be liable for any damage or loss to the system.
+    ************************************************************************
+    #>
+
+    [CmdletBinding()]
+    Param(
+        [Parameter(Position=0,ValueFromPipeline=$True,mandatory=$True)]
+        [System.Security.Cryptography.X509Certificates.X509Certificate]$certificate
+    )
+    $certRaw = ([System.Convert]::ToBase64String($certificate.PublicKey.EncodedKeyValue.RawData)).tostring()
+    return ("-----BEGIN PUBLIC KEY-----`n" + "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A" + $certRaw + "`n-----END PUBLIC KEY-----")
+}
+function New-PureOneJwt {
+    <#
+    .SYNOPSIS
+      Takes in a Pure1 Application ID and certificate to create a JSON Web Token.
+    .DESCRIPTION
+      Takes in a Pure1 Application ID and certificate to create a JSON Web Token that is valid for by default 30 days, but is extended if a custom expiration is passed in. Can also take in a private key in lieu of the full cert. Will reject if the private key is not properly formatted.
+    .INPUTS
+      Pure1 Application ID, an expiration, and a certificate or a private key.
+    .OUTPUTS
+      Returns the JSON Web Token as a string.
+    .EXAMPLE
+        PS C:\ $cert = New-PureOneCertificate
+        PS C:\ New-PureOneJwt -certificate $cert -pureAppID pure1:apikey:v4u3ZXXXXXXXXC6o
+
+        Returns a JSON Web Token that can be used to create a Pure1 REST session. A JWT generated with no specificed expiration is valid for 30 days.
+    .EXAMPLE
+        PS C:\ $cert = New-PureOneCertificate
+        PS C:\ New-PureOneJwt -certificate $cert -pureAppID pure1:apikey:v4u3ZXXXXXXXXC6o -expiration ((get-date).addDays(2))
+
+        Returns a JSON Web Token that can be used to create a Pure1 REST session. An expiration was set for two days for now, so this JWT will be valid to create new REST sessions for 48 hours.
+    .NOTES
+      Version:        1.0
+      Author:         Cody Hosterman https://codyhosterman.com
+      Creation Date:  12/02/2019
+      Purpose/Change: Initial script development
+  
+    *******Disclaimer:******************************************************
+    This scripts are offered "as is" with no warranty.  While this 
+    scripts is tested and working in my environment, it is recommended that you test 
+    this script in a test lab before using in a production environment. Everyone can 
+    use the scripts/commands provided here without any written permission but I
+    will not be liable for any damage or loss to the system.
+    ************************************************************************
+    #>
+
+    [CmdletBinding()]
+    Param(
+            [Parameter(Position=0,ValueFromPipeline=$True)]
+            [System.Security.Cryptography.X509Certificates.X509Certificate]$certificate,
+
+            [Parameter(Position=1,mandatory=$True)]
+            [string]$pureAppID,
+            
+            [Parameter(Position=2,ValueFromPipeline=$True)]
+            [System.Security.Cryptography.RSA]$privateKey,
+
+            [Parameter(Position=3,ValueFromPipeline=$True)]
+            [System.DateTime]$expiration
+    )
+
+    if (($null -eq $privateKey) -and ($null -eq $certificate))
+    {
+        throw "You must pass in a x509 certificate or a RSA Private Key"
+    }
+    #checking for certificate accuracy
+    if ($null -ne $certificate)
+    {
+        if ($certificate.HasPrivateKey -ne $true)
+        {
+            throw "There is no private key associated with this certificate. Please regenerate certificate with a private key."
+        }
+        if ($null -ne $certificate.PrivateKey)
+        {
+            $privateKey = $certificate.PrivateKey
+        }
+        else {
+            try {
+                $privateKey = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($certificate)
+            }
+            catch {
+                throw "Could not obtain the private key from the certificate. Please re-run this cmdlet from a PowerShell session started with administrative rights or ensure you have Read Only or higher rights to the certificate."
+            }
+        }
+    }
+    #checking for correct private key type. Must be SHA-256, 2048 bit.
+    if ($null -ne $privateKey)
+    {
+        if ($privateKey.KeySize -ne 2048)
+        {
+            throw "The key must be 2048 bit. It is currently $($privateKey.KeySize)"
+        }
+        if ($privateKey.SignatureAlgorithm -ne "RSA")
+        {
+            throw "This key is not an RSA-based key."
+        }
+    }
+    $pureHeader = '{"alg":"RS256","typ":"JWT"}'
+    $curTime = (Get-Date).ToUniversalTime()
+    $curTime = [Math]::Floor([decimal](Get-Date($curTime) -UFormat "%s"))
+    if ($null -eq $expiration)
+    {
+        $expTime = $curTime  + 2592000
+    }
+    else {
+        $expTime = $expiration.ToUniversalTime()
+        $expTime = [Math]::Floor([decimal](Get-Date($expTime) -UFormat "%s"))
+    }
+    $payloadJson = '{"iss":"' + $pureAppID + '","iat":' + $curTime + ',"exp":' + $expTime + '}'
+    $encodedHeader = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($pureHeader)) -replace '\+','-' -replace '/','_' -replace '='
+    $encodedPayload = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($payloadJson)) -replace '\+','-' -replace '/','_' -replace '='
+    $toSign = $encodedHeader + '.' + $encodedPayload
+    $toSignEncoded = [System.Text.Encoding]::UTF8.GetBytes($toSign)
+    $signature = [Convert]::ToBase64String($privateKey.SignData($toSignEncoded,[Security.Cryptography.HashAlgorithmName]::SHA256,[Security.Cryptography.RSASignaturePadding]::Pkcs1)) -replace '\+','-' -replace '/','_' -replace '='
+    $jwt = $toSign + '.' + $signature 
+    return $jwt
+}
 function New-PureOneRestConnection {
     <#
     .SYNOPSIS
@@ -10,9 +200,9 @@ function New-PureOneRestConnection {
     .OUTPUTS
       Does not return anything--it stores the Pure1 REST access token in a global variable called $global:pureOneRestHeader. Valid for 10 hours.
     .NOTES
-      Version:        1.0
+      Version:        1.1
       Author:         Cody Hosterman https://codyhosterman.com
-      Creation Date:  01/12/2019
+      Creation Date:  12/02/2019
       Purpose/Change: Initial script development
   
     *******Disclaimer:******************************************************
@@ -35,67 +225,21 @@ function New-PureOneRestConnection {
             [Parameter(Position=2,ValueFromPipeline=$True)]
             [System.Security.Cryptography.RSA]$privateKey
     )
-    Begin{
-        if (($null -eq $privateKey) -and ($null -eq $certificate))
-        {
-            throw "You must pass in a x509 certificate or a RSA Private Key"
-        }
-        #checking for certificate accuracy
-        if ($null -ne $certificate)
-        {
-            if ($certificate.HasPrivateKey -ne $true)
-            {
-                throw "There is no private key associated with this certificate. Please regenerate certificate with a private key."
-            }
-            if ($null -ne $certificate.PrivateKey)
-            {
-                $privateKey = $certificate.PrivateKey
-            }
-            else {
-                try {
-                    $privateKey = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($certificate)
-                }
-                catch {
-                    throw "Could not obtain the private key from the certificate. Please re-run this cmdlet from a PowerShell session started with administrative rights."
-                }
-            }
-        }
-        #checking for correct private key type. Must be SHA-256, 2048 bit.
-        if ($null -ne $privateKey)
-        {
-            if ($privateKey.KeySize -ne 2048)
-            {
-                throw "The key must be 2048 bit. It is currently $($privateKey.KeySize)"
-            }
-            if ($privateKey.SignatureAlgorithm -ne "RSA")
-            {
-                throw "This key is not an RSA-based key."
-            }
-        }
+    if ($null -eq $certificate)
+    {
+        $jwt = New-PureOneJwt -privateKey $privateKey -pureAppID $pureAppID -expiration ((Get-Date).AddSeconds(60))
     }
-    Process{
-        $pureHeader = '{"alg":"RS256","typ":"JWT"}'
-        $curTime = (Get-Date).ToUniversalTime()
-        $curTime = [Math]::Floor([decimal](Get-Date($curTime) -UFormat "%s"))
-        $expTime = $curTime  + 1000
-        $payloadJson = '{"iss":"' + $pureAppID + '","iat":' + $curTime + ',"exp":' + $expTime + '}'
-        $encodedHeader = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($pureHeader)) -replace '\+','-' -replace '/','_' -replace '='
-        $encodedPayload = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($payloadJson)) -replace '\+','-' -replace '/','_' -replace '='
-        $toSign = $encodedHeader + '.' + $encodedPayload
-        $toSignEncoded = [System.Text.Encoding]::UTF8.GetBytes($toSign)
-        $signature = [Convert]::ToBase64String($privateKey.SignData($toSignEncoded,[Security.Cryptography.HashAlgorithmName]::SHA256,[Security.Cryptography.RSASignaturePadding]::Pkcs1)) -replace '\+','-' -replace '/','_' -replace '='
-        $jwt = $toSign + '.' + $signature
+    else {
+        $jwt = New-PureOneJwt -certificate $certificate -pureAppID $pureAppID -expiration ((Get-Date).AddSeconds(60)) 
     }
-    End{
-        $apiendpoint = "https://api.pure1.purestorage.com/oauth2/1.0/token"
-        $AuthAction = @{
-            grant_type = "urn:ietf:params:oauth:grant-type:token-exchange"
-            subject_token = $jwt
-            subject_token_type = "urn:ietf:params:oauth:token-type:jwt"
-            }
-        $pureOnetoken = Invoke-RestMethod -Method Post -Uri $apiendpoint -ContentType "application/x-www-form-urlencoded" -Body $AuthAction
-        $Global:pureOneRestHeader = @{authorization="Bearer $($pureOnetoken.access_token)"} 
-    }
+    $apiendpoint = "https://api.pure1.purestorage.com/oauth2/1.0/token"
+    $AuthAction = @{
+        grant_type = "urn:ietf:params:oauth:grant-type:token-exchange"
+        subject_token = $jwt
+        subject_token_type = "urn:ietf:params:oauth:token-type:jwt"
+        }
+    $pureOnetoken = Invoke-RestMethod -Method Post -Uri $apiendpoint -ContentType "application/x-www-form-urlencoded" -Body $AuthAction
+    $Global:pureOneRestHeader = @{authorization="Bearer $($pureOnetoken.access_token)"} 
 }
 function Get-PureOneArray {
     <#
